@@ -37,7 +37,8 @@ class CausalSelfAttention(nn.Module):
     
     seq_len = score.size(-1)
     causal_mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
-    causal_mask = causal_mask.unsqueeze(0).unsqueeze(0)
+    #causal_mask = causal_mask.unsqueeze(0).unsqueeze(0)
+    cuasal_mask = causal_mask.to(score.device).unsqueeze(0).unsqueeze(0) #making causal mask on the same device as score
     score = score.masked_fill(~causal_mask, float('-inf'))
 
     score = score + attention_mask
