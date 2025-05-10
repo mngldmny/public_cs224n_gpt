@@ -62,21 +62,18 @@ class SonnetGPT(nn.Module):
     """
     ### YOUR CODE HERE
 
-    # hidden_state: (batch_size, sequence_length, embedde_dimension)
+    #run token through GPT to get hidden states
     outputs = self.gpt(input_ids=input_ids, attention_mask = attention_mask)
-    
-    # if GPT return tuple, then the first element is the last hidden sate
-    if isinstance(outputs, tuple):
-      hidden_states=outputs[0]
-    else:
-      hidden_states=outputs
+
+    #outputs[0] is last_hidden_state
+    # hidden_state: (batch_size, sequence_length, embedde_dimension)
+    hidden_states=outputs[0]
     
     #get token embedding weights. 
     # wte.weight: (vocabulary_size, embedded_dimension)
-    embed_weight = self.gpt.wte.weight
+    embed_weight = self.gpt.word_embedding.weight
 
     #project each hidden vector into vacabulary space
-    #take dot product between its hidden vector and every row of embedding weight
     #hidden_state: (batch_size, sequence_length, embedde_dimension)
     #embed_weights.t() : (embedding_dimension, vocabulary_size)
     #logits: (batch, sequence_length, vocabulary size)
