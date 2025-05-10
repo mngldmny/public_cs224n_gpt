@@ -61,8 +61,28 @@ class SonnetGPT(nn.Module):
     not just the distribution over next tokens for the last token!
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
 
+    # hidden_state: (batch_size, sequence_length, embedde_dimension)
+    outputs = self.gpt(input_ids=input_ids, attention_mask = attention_mask)
+    
+    # if GPT return tuple, then the first element is the last hidden sate
+    if isinstance(outputs, tuple):
+      hidden_states=outputs[0]
+    else:
+      hidden_states=outputs
+    
+    #get token embedding weights. 
+    # wte.weight: (vocabulary_size, embedded_dimension)
+    embed_weight = self.gpt.wte.weight
+
+    #project each hidden vector into vacabulary space
+    #take dot product between its hidden vector and every row of embedding weight
+    #hidden_state: (batch_size, sequence_length, embedde_dimension)
+    #embed_weights.t() : (embedding_dimension, vocabulary_size)
+    #logits: (batch, sequence_length, vocabulary size)
+    logits = torch.matmul(hidden_states, embed_weight.t())
+
+    return logits
 
   def get_device(self):
     for param in self.gpt.parameters():
