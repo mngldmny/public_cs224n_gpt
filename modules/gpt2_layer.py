@@ -30,8 +30,9 @@ class GPT2Layer(nn.Module):
         IN THIS FUNCTION.
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
-
+    projected = dense_layer(output) #linear projection
+    dropped = dropout(projected) #drop some units for reg
+    return input + dropped #residual connection
 
   def forward(self, hidden_states, attention_mask):
     """
@@ -43,5 +44,28 @@ class GPT2Layer(nn.Module):
     """
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+
+    ### self-attention layer ###
+    attention_input = self.attention_layer_norm(hidden_states) #normalize input
+    attention_output = self.self_attention(attention_input, attention_mask) #masked self attention applied
+    #residual: projection -> dropout -> add
+    hidden_states= self.add(
+      input= hidden_states,
+      output=attention_output, 
+      dense_layer = self.attention_dense, 
+      dropout= self.attention_dropout
+    )
+
+    ### feed forward layer ###
+    feedforward_input = self.out_layer_norm(hidden_states) #normalize hidden states after attention
+    interm_output = self.interm_af(self.interm_dense(feedforward_input)) #expand and activation
+    #residual: projection -> dropout -> add
+    hidden_states= self. add(
+      input= hidden_states,
+      output=interm_output, 
+      dense_layer = self.out_dense, 
+      dropout= self.out_dropout
+    )
+
+    return hidden_states
 

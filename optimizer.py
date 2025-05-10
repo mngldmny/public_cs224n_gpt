@@ -27,28 +27,44 @@ class AdamW(Optimizer):
         super().__init__(params, defaults)
 
     def step(self, closure: Callable = None):
+        """
+        Performs a single optimization step.
+        """
         loss = None
         if closure is not None:
             loss = closure()
 
         for group in self.param_groups:
-            for p in group["params"]:
+            alpha = group['lr']
+            beta1, beta2 = group['betas']
+            eps = group['eps']
+            weight_decay = group['weight_decay']
+            correct_bias = group['correct_bias']
+
+            for p in group['params']:
                 if p.grad is None:
                     continue
                 grad = p.grad.data
                 if grad.is_sparse:
-                    raise RuntimeError("Adam does not support sparse gradients, please consider SparseAdam instead")
+                    raise RuntimeError(
+                        "AdamW does not support sparse gradients, please consider SparseAdam instead"
+                    )
 
-                # State should be stored in this dictionary.
                 state = self.state[p]
 
-                # Access hyperparameters from the `group` dictionary.
-                alpha = group["lr"]
+                # State initialization
+                if len(state) == 0:
+                    state['step'] = 0
+                    state['m'] = torch.zeros_like(grad)
+                    state['v'] = torch.zeros_like(grad)
 
+                m, v = state['m'], state['v']
+                state['step'] += 1
+                t = state['step']
 
                 ### TODO: Complete the implementation of AdamW here, reading and saving
-                ###       your state in the `state` dictionary above.
-                ###       The hyperparameters can be read from the `group` dictionary
+                ###       your state in the state dictionary above.
+                ###       The hyperparameters can be read from the group dictionary
                 ###       (they are lr, betas, eps, weight_decay, as saved in the constructor).
                 ###
                 ###       To complete this implementation:
@@ -61,7 +77,25 @@ class AdamW(Optimizer):
                 ###
                 ###       Refer to the default project handout for more details.
                 ### YOUR CODE HERE
-                raise NotImplementedError
+
+                ### 1. Update biased first and second moment estimates
+                m = beta1 * m + (1 - beta1) * grad
+                v = beta2 * v + (1 - beta2) * grad * grad
+                state['m'], state['v'] = m, v
+                
+                ### 2. Apply bias correction
+                if correct_bias:
+                    m_hat = m / (1 - beta1**t)
+                    v_hat = v / (1 - beta2**t)
+                else:
+                    m_hat, v_hat = m, v
+
+                ### 3. Update parameters (p.data)
+                p.data -= alpha * m_hat / (v_hat.sqrt() + eps)
+
+                ### 4. Decoupled weight decay
+                if weight_decay != 0:
+                    p.data -= alpha * p.data * weight_decay
 
 
         return loss
