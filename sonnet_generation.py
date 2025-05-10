@@ -67,7 +67,7 @@ class SonnetGPT(nn.Module):
 
     #outputs[0] is last_hidden_state
     # hidden_state: (batch_size, sequence_length, embedde_dimension)
-    hidden_states=outputs[0]
+    hidden_states=outputs['last_hidden_state']
     
     #get token embedding weights. 
     # wte.weight: (vocabulary_size, embedded_dimension)
